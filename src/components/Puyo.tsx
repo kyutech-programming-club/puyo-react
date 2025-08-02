@@ -1,27 +1,28 @@
-// src/components/Puyo.tsx
-import React from 'react';
-import type { PuyoColor } from '../types/GameTypes';
+import React from "react";
+import type { Cell } from "../types";
 
-type PuyoProps = {
-    color: PuyoColor;
+type Props = {
+    color: Cell;
 };
 
-const colorMap: Record<Exclude<PuyoColor, null>, string> = {
-    red: '#e74c3c',
-    green: '#2ecc71',
-    blue: '#3498db',
-    yellow: '#f1c40f',
+const colorMap: Record<Exclude<Cell, null>, string> = {
+    red: "#e74c3c",
+    green: "#2ecc71",
+    blue: "#3498db",
+    yellow: "#f1c40f",
 };
 
-const Puyo: React.FC<PuyoProps> = ({ color }) => {
+const Puyo: React.FC<Props> = ({ color }) => {
     return (
         <div
-            className="puyo"
             style={{
-                backgroundColor: color ? colorMap[color] : '#eee',
+                width: "30px",
+                height: "30px",
+                backgroundColor: color ? colorMap[color] : "lightgray",
+                borderRadius: "50%",
             }}
         />
     );
 };
 
-export default Puyo;  
+export default Puyo;
