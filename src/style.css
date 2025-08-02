@@ -1,0 +1,25 @@
+/* src/style.css */
+
+.app {
+    text-align: center;
+}
+
+.game-board {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+.row {
+    display: flex;
+    gap: 2px;
+}
+
+.puyo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+}
