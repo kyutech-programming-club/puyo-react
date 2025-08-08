@@ -1,28 +1,20 @@
 import React from "react";
-import Puyo from "./Puyo";
-import type { Cell, CurrentPuyo } from "../types";
+import type { Cell, CurrentPuyo } from "../components/types";
+import { FIELD_WIDTH } from "../components/types";
+import { getAdjacentPuyoOffset, } from "../logic/gameLogic";
 
-type Props = {
+
+type BoardProps = {
     board: Cell[][];
     currentPuyo: CurrentPuyo;
 };
 
-const GameBoard: React.FC<Props> = ({ board, currentPuyo }) => {
-    const getAdjacentPuyoOffset = (direction: CurrentPuyo["direction"]) => {
-        switch (direction) {
-            case "up": return [0, -1];
-            case "right": return [1, 0];
-            case "down": return [0, 1];
-            case "left": return [-1, 0];
-            default: return [0, -1];
-        }
-    };
-
+export const Board: React.FC<BoardProps> = ({ board, currentPuyo }) => {
     return (
         <div
             style={{
                 display: "grid",
-                gridTemplateColumns: `repeat(${board[0].length}, 30px)`,
+                gridTemplateColumns: `repeat(${FIELD_WIDTH}, 30px)`,
                 gap: "2px",
                 backgroundColor: "#333",
                 padding: "10px",
@@ -43,11 +35,19 @@ const GameBoard: React.FC<Props> = ({ board, currentPuyo }) => {
                         color = currentPuyo.subColor;
                     }
 
-                    return <Puyo key={`${x}-${y}`} color={color} />;
+                    return (
+                        <div
+                            key={`${x}-${y}`}
+                            style={{
+                                width: "30px",
+                                height: "30px",
+                                backgroundColor: color || "lightgray",
+                                borderRadius: "50%",
+                            }}
+                        />
+                    );
                 })
             )}
         </div>
     );
 };
-
-export default GameBoard;
