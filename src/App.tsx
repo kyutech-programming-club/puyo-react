@@ -34,6 +34,7 @@ const getAdjacentPuyoOffset = (direction: string): [number, number] => {
   }
 };
 
+
 function App() {
   const [board, setBoard] = useState<Cell[][]>(
     Array.from({ length: FIELD_HEIGHT }, () =>
@@ -50,6 +51,11 @@ function App() {
   });
 
   const [isChainRunning, setIsChainRunning] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false); // ゲームオーバーフラグ
+  const [isGameOverHandled, setIsGameOverHandled] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [poppedCount, setPoppedCount] = useState(0);
+
 
   // 盤面の指定セルが空かどうか
   const isCellEmpty = (x: number, y: number): boolean => {
@@ -91,7 +97,7 @@ function App() {
   };
 
   // ぷよ固定→重力→連鎖処理の一連の流れ
-  const fixPuyoAndCheck = () => {
+ const fixPuyoAndCheck = () => {
     setIsChainRunning(true);
 
     const [dx, dy] = getAdjacent(currentPuyo.direction);
@@ -129,76 +135,89 @@ function App() {
     };
 
     // 消去判定関数（4つ以上繋がっているぷよを消す）
-    const checkAndPopPuyos = (board: Cell[][]): { newBoard: Cell[][]; popped: boolean } => {
-      const directions = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-      ];
-      const visited = Array.from({ length: FIELD_HEIGHT }, () =>
-        Array(FIELD_WIDTH).fill(false)
-      );
-      const newBoard = board.map((row) => [...row]);
-      let popped = false;
+const checkAndPopPuyos = (board: Cell[][]): { newBoard: Cell[][]; popped: boolean; poppedNum: number } => {
+    const directions = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
+    const visited = Array.from({ length: FIELD_HEIGHT }, () =>
+      Array(FIELD_WIDTH).fill(false)
+    );
+    const newBoard = board.map((row) => [...row]);
+    let popped = false;
+    let poppedNum = 0;  // 追加：消したぷよの数
 
-      for (let y = 0; y < FIELD_HEIGHT; y++) {
-        for (let x = 0; x < FIELD_WIDTH; x++) {
-          if (newBoard[y][x] !== null && !visited[y][x]) {
-            const color = newBoard[y][x];
-            const queue: [number, number][] = [[x, y]];
-            const connected: [number, number][] = [];
-            visited[y][x] = true;
+    for (let y = 0; y < FIELD_HEIGHT; y++) {
+      for (let x = 0; x < FIELD_WIDTH; x++) {
+        if (newBoard[y][x] !== null && !visited[y][x]) {
+          const color = newBoard[y][x];
+          const queue: [number, number][] = [[x, y]];
+          const connected: [number, number][] = [];
+          visited[y][x] = true;
 
-            while (queue.length > 0) {
-              const [cx, cy] = queue.shift()!;
-              connected.push([cx, cy]);
+          while (queue.length > 0) {
+            const [cx, cy] = queue.shift()!;
+            connected.push([cx, cy]);
 
-              for (const [dx, dy] of directions) {
-                const nx = cx + dx;
-                const ny = cy + dy;
-                if (
-                  nx >= 0 &&
-                  nx < FIELD_WIDTH &&
-                  ny >= 0 &&
-                  ny < FIELD_HEIGHT &&
-                  !visited[ny][nx] &&
-                  newBoard[ny][nx] === color
-                ) {
-                  visited[ny][nx] = true;
-                  queue.push([nx, ny]);
-                }
+            for (const [dx, dy] of directions) {
+              const nx = cx + dx;
+              const ny = cy + dy;
+              if (
+                nx >= 0 &&
+                nx < FIELD_WIDTH &&
+                ny >= 0 &&
+                ny < FIELD_HEIGHT &&
+                !visited[ny][nx] &&
+                newBoard[ny][nx] === color
+              ) {
+                visited[ny][nx] = true;
+                queue.push([nx, ny]);
               }
             }
+          }
 
-            if (connected.length >= 4) {
-              popped = true;
-              for (const [cx, cy] of connected) {
-                newBoard[cy][cx] = null;
-              }
+          if (connected.length >= 4) {
+            popped = true;
+            poppedNum += connected.length;  // 消した数を加算
+            for (const [cx, cy] of connected) {
+              newBoard[cy][cx] = null;
             }
           }
         }
       }
+    }
 
-      return { newBoard, popped };
-    };
+    return { newBoard, popped, poppedNum };
+  };
 
     // 重力適用
     let fallingBoard = applyGravity(newBoard);
     setBoard(fallingBoard);
 
     // 連鎖処理の再帰ループ
-    const chainLoop = () => {
-      const { newBoard: poppedBoard, popped } = checkAndPopPuyos(fallingBoard);
-      if (popped) {
-        fallingBoard = applyGravity(poppedBoard);
-        setBoard(fallingBoard);
-        setTimeout(chainLoop, 300);
-      } else {
-        // 連鎖終了
-        setIsChainRunning(false);
-        // 新しいぷよ出現（右向きスタート）
+ const chainLoop = () => {
+    const { newBoard: poppedBoard, popped, poppedNum } = checkAndPopPuyos(fallingBoard);
+    if (popped) {
+      fallingBoard = applyGravity(poppedBoard);
+      setBoard(fallingBoard);
+      setPoppedCount((prev) => prev + poppedNum);
+      setTimeout(chainLoop, 300);
+    } else {
+      setBoard(fallingBoard);
+
+      // 連鎖終了後にゲームオーバー判定
+      const isGameOverNow = fallingBoard[0][2] !== null || fallingBoard[0][3] !== null;
+
+      if (isGameOverNow) {
+      setIsGameOver(true);
+      }
+
+      setIsChainRunning(false);
+
+      if (!isGameOverNow) {
+        // 新しいぷよ出現（ゲーム続行）
         setCurrentPuyo({
           x: 2,
           y: 0,
@@ -207,12 +226,13 @@ function App() {
           subColor: getRandomColor(),
         });
       }
-    };
-
-    setTimeout(chainLoop, 300);
+    }
   };
 
-  // 回転処理（回転できるなら向きを変更）
+  setTimeout(chainLoop, 300);
+};
+
+// 回転処理（回転できるなら向きを変更）
   const canPlacePuyo = (x: number, y: number, direction: CurrentPuyo["direction"]): boolean => {
     if (!isCellEmpty(x, y)) return false;
     const [dx, dy] = getAdjacent(direction);
@@ -286,42 +306,112 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      moveDown();
-    }, 500);
-    return () => clearInterval(interval);
-  }, [board, currentPuyo, isChainRunning]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isChainRunning) return;
+const score = poppedCount * 250 + Math.floor(timer / 100) * 10;
 
-      if (e.code === "Space") {
-        rotate();
-      } else if (e.key === "ArrowLeft") {
-        moveHorizontal(-1);
-      } else if (e.key === "ArrowRight") {
-        moveHorizontal(1);
-      } else if (e.key === "ArrowDown") {
-        dropPuyoToBottom();
-      }
-    };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board, isChainRunning]);
+// キーイベント登録
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (isChainRunning) return;
 
-  return (
+    if (e.code === "Space") {
+      rotate();
+    } else if (e.key === "ArrowLeft") {
+      moveHorizontal(-1);
+    } else if (e.key === "ArrowRight") {
+      moveHorizontal(1);
+    } else if (e.key === "ArrowDown") {
+      dropPuyoToBottom();
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, [isChainRunning, board]);
+
+// タイマー処理（ゲームオーバー時は停止）
+useEffect(() => {
+  if (isGameOver) return;
+
+  const interval = setInterval(() => {
+    setTimer((prev) => prev + 100);
+  }, 100);
+
+  return () => clearInterval(interval);
+}, [isGameOver]);
+
+// 落下ループ
+useEffect(() => {
+  if (isGameOver) return; // ゲームオーバー中は停止
+  const interval = setInterval(() => {
+    moveDown();
+  }, 500);
+  return () => clearInterval(interval);
+}, [board, currentPuyo, isChainRunning, isGameOver]);
+
+// ゲームオーバー処理
+useEffect(() => {
+  if (isGameOver && !isGameOverHandled) {
+    setIsGameOverHandled(true);
+
+    // 先にフラグを戻す
+    setIsGameOver(false);
+
+    // 盤面などリセット
+    resetGame();
+
+    // アラートは最後に出す
+    alert(`ゲームオーバー！\nスコア: ${score}`);
+  }
+}, [isGameOver, isGameOverHandled, poppedCount, timer]);
+
+// resetGame 内では isGameOver を触らない
+const resetGame = () => {
+  setIsGameOverHandled(false);
+  setBoard(
+    Array.from({ length: FIELD_HEIGHT }, () =>
+      Array.from({ length: FIELD_WIDTH }, () => null)
+    )
+  );
+  setCurrentPuyo({
+    x: 2,
+    y: 0,
+    color: getRandomColor(),
+    direction: "right",
+    subColor: getRandomColor(),
+  });
+  setIsChainRunning(false);
+  setTimer(0);
+  setPoppedCount(0);
+};
+
+ return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: "100vh",    // 画面全体の高さを確保
-        backgroundColor: "#222", // 背景色はお好みで
+        height: "100vh",
+        backgroundColor: "#222",
       }}
     >
+      {/* タイマー表示 */}
+ <div
+        style={{
+          position: "fixed",
+          top: 10,
+          right: 10,
+          color: "white",
+          fontSize: "20px",
+          fontFamily: "monospace",
+          userSelect: "none",
+          zIndex: 10,
+        }}
+      >
+        {(timer / 1000).toFixed(1)}秒
+      </div>
+
       <div
         style={{
           display: "grid",
