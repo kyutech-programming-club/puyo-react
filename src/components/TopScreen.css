@@ -1,11 +1,11 @@
 /* 全体 */
 .top-screen {
   background-image: url('/src/images/puyopuyo.png');
-  background-size: cover;      /* 画像を画面いっぱいに拡大縮小 */
-  background-position: center; /* 中央に配置 */
+  background-size: cover;      
+  background-position: center; 
   background-repeat: no-repeat;
-  min-height: 100vh;           /* 画面全体の高さにする */
-  
+  min-height: 100vh;           
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -23,7 +23,7 @@
   font-family: "Press Start 2P", cursive;
 }
 
-/* スタートボタン */
+/* スタートボタン  */
 .start-button {
   background-color: #facc15;
   color: black;
@@ -60,7 +60,7 @@
 }
 
 .toggle-button:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: gold;
 }
 
 .how-to-box {

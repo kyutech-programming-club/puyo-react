@@ -5,7 +5,7 @@ const TopScreen = () => {
   const [scores] = useState<number[]>([1200, 800, 950, 1500, 700, 1100]); // 仮のスコア
   const [showHowTo, setShowHowTo] = useState(false);
   const topScores = [...scores]
-    .sort((a, b) => b - a) // 降順ソート
+    .sort((a, b) => b - a) 
     .slice(0, 5);
 
   return (
