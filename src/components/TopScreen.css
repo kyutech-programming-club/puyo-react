@@ -1,0 +1,99 @@
+/* 全体 */
+.top-screen {
+  background-image: url('/src/images/puyopuyo.png');
+  background-size: cover;      /* 画像を画面いっぱいに拡大縮小 */
+  background-position: center; /* 中央に配置 */
+  background-repeat: no-repeat;
+  min-height: 100vh;           /* 画面全体の高さにする */
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-family: "Press Start 2P", cursive;
+}
+
+
+/* タイトル */
+.game-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  font-family: "Press Start 2P", cursive;
+}
+
+/* スタートボタン */
+.start-button {
+  background-color: #facc15;
+  color: black;
+  font-size: 1.2rem;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+  transition: background 0.2s;
+}
+
+.start-button:hover {
+  background-color: #eab308;
+}
+
+/* 操作説明 */
+.how-to-container {
+  position: absolute;
+  top: 2rem;
+  right: 3rem;
+  text-align: right;
+}
+
+.toggle-button {
+  background: yellow;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: black;
+  cursor: pointer;
+  font-size: 1.3rem;
+  transition: background 0.2s;
+}
+
+.toggle-button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.how-to-box {
+  margin-top: 0.5rem;
+  background: white;
+  color: black;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  width: 200px;
+}
+
+/* スコアボード */
+.score-board {
+  margin-top: 2rem;
+  background: white;
+  color: black;
+  padding: 1rem 2rem;
+  border-radius: 0.8rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  width: 250px;
+}
+
+.score-board h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.score-board ul {
+  list-style: none;
+  padding: 0;
+}
+
+.score-board li {
+  margin: 0.3rem 0;
+}
