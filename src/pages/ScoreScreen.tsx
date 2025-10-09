@@ -10,7 +10,7 @@ export const ScoreScreen: React.FC = () => {
     return (
         <div style={{ textAlign: "center", marginTop: "50px" }}>
             <h1>ゲーム終了！</h1>
-            <p>プレイヤー{player}のスコア: {score}</p>
+            <p>プレイヤー{player}の勝ち</p>
             <button onClick={() => navigate("/game")}>もう一度遊ぶ</button>
         </div>
     );

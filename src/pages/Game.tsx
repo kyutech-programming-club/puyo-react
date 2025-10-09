@@ -4,6 +4,8 @@ import { FIELD_WIDTH, FIELD_HEIGHT } from "../components/types";
 import { Board } from "../components/GameBoard";
 import { useNavigate } from "react-router-dom";
 import { NextPuyoDisplay } from "../components/NextPuyoDisplay";
+import { db } from "../firebase";
+import { doc, getDoc, setDoc, onSnapshot, updateDoc } from "firebase/firestore";
 
 import {
     getAdjacentPuyoOffset,
@@ -42,7 +44,50 @@ export const Game: React.FC = () => {
     // 既存の isGameOver, isGameOverHandled の近くに追加
     const [isGameOverPlayer1, setIsGameOverPlayer1] = useState(false);
     const [isGameOverPlayer2, setIsGameOverPlayer2] = useState(false);
+    // 高速落下フラグ
+    const [fastDropPlayer1, setFastDropPlayer1] = useState(false);
+    const [fastDropPlayer2, setFastDropPlayer2] = useState(false);
 
+
+    const [playerId, setPlayerId] = useState<"player1" | "player2" | null>(null);
+    const [roomState, setRoomState] = useState<any>(null);
+
+    useEffect(() => {
+        const roomRef = doc(db, "rooms", "abc123");
+
+        const joinRoom = async () => {
+            const snap = await getDoc(roomRef);
+
+            if (!snap.exists()) {
+                // 部屋が存在しなかったら新規作成
+                await setDoc(roomRef, {
+                    player1: "joined",
+                    player2: null,
+                    status: "waiting",
+                });
+                setPlayerId("player1");
+            } else {
+                const data = snap.data();
+                if (data.player1 === "waiting") {
+                    await updateDoc(roomRef, { player1: "joined" });
+                    setPlayerId("player1");
+                } else if (data.player2 === "waiting") {
+                    await updateDoc(roomRef, { player2: "joined", status: "playing" });
+                    setPlayerId("player2");
+                } else {
+                    alert("満員です！");
+                }
+
+            }
+
+            // リアルタイム監視
+            onSnapshot(roomRef, (snap) => {
+                setRoomState(snap.data());
+            });
+        };
+
+        joinRoom();
+    }, []);
 
 
     // 左プレイヤー落下
@@ -234,6 +279,31 @@ export const Game: React.FC = () => {
     };
 
 
+    // Player1: Shift押した瞬間に落とす
+    const dropPlayer1 = () => {
+        if (isChainRunningPlayer1) return;
+
+        setPlayer1Current(prev => ({
+            ...prev,
+            y: getDropPosition(player1Board, prev),
+        }));
+
+        // 固定＋連鎖処理も呼ぶ
+        fixPuyoAndCheckPlayer1();
+    };
+
+    // Player2: Enter押した瞬間に落とす
+    const dropPlayer2 = () => {
+        if (isChainRunningPlayer2) return;
+
+        setPlayer2Current(prev => ({
+            ...prev,
+            y: getDropPosition(player2Board, prev),
+        }));
+
+        fixPuyoAndCheckPlayer2();
+    };
+
 
     // キーイベント登録
     useEffect(() => {
@@ -241,35 +311,41 @@ export const Game: React.FC = () => {
             // 左プレイヤー操作制限
             if (!isChainRunningPlayer1) {
                 switch (e.key.toLowerCase()) {
-                    case "w": rotatePlayer1(); break;
-                    case "s": rotateLeftPlayer1(); break;
+                    case "s": rotatePlayer1(); break;
+                    case "w": rotateLeftPlayer1(); break;
                     case "a": moveHorizontalPlayer1(-1); break;
                     case "d": moveHorizontalPlayer1(1); break;
+                    case " ": // 一気に落下
+                        setPlayer1Current(prev => ({
+                            ...prev,
+                            y: getDropPosition(player1Board, prev),
+                        }));
+                        fixPuyoAndCheckPlayer1();
+                        break;
                 }
             }
 
             // 右プレイヤー操作制限
             if (!isChainRunningPlayer2) {
                 switch (e.code) {
-                    case "ArrowUp": rotatePlayer2(); break;
-                    case "ArrowDown": rotateLeftPlayer2(); break;
+                    case "ArrowDown": rotatePlayer2(); break;
+                    case "ArrowUp": rotateLeftPlayer2(); break;
                     case "ArrowLeft": moveHorizontalPlayer2(-1); break;
                     case "ArrowRight": moveHorizontalPlayer2(1); break;
+                    case "Enter": // 一気に落下
+                        setPlayer2Current(prev => ({
+                            ...prev,
+                            y: getDropPosition(player2Board, prev),
+                        }));
+                        fixPuyoAndCheckPlayer2();
+                        break;
                 }
             }
         };
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [
-        player1Board,
-        player1Current,
-        player2Board,
-        player2Current,
-        isChainRunningPlayer1,
-        isChainRunningPlayer2
-    ]);
-
+    }, [player1Board, player2Board, isChainRunningPlayer1, isChainRunningPlayer2]);
 
     // タイマー処理
     useEffect(() => {
@@ -350,15 +426,6 @@ export const Game: React.FC = () => {
     // スコア計算
     const score = poppedCount * 250 + Math.floor(timer / 100) * 10;
 
-    // ゲームオーバー処理
-    useEffect(() => {
-        if (isGameOver && !isGameOverHandled) {
-            setIsGameOverHandled(true);
-            setIsGameOver(false);
-            navigate("/score", { state: { score } });
-            resetGame();
-        }
-    }, [isGameOver, isGameOverHandled, poppedCount, timer]);
 
     // Game.tsx 内の useEffect (ゲームオーバー処理)
     useEffect(() => {
@@ -367,9 +434,9 @@ export const Game: React.FC = () => {
 
             let scoreData;
             if (isGameOverPlayer1) {
-                scoreData = { score, player: 1 };
-            } else if (isGameOverPlayer2) {
                 scoreData = { score, player: 2 };
+            } else if (isGameOverPlayer2) {
+                scoreData = { score, player: 1 };
             }
 
             navigate("/score", { state: scoreData });
@@ -389,6 +456,7 @@ export const Game: React.FC = () => {
         setTimer(0);
         setPoppedCount(0);
     };
+
 
     return (
         <div
