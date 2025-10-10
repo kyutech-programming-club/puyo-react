@@ -5,6 +5,8 @@ import { Game } from "./pages/Game";
 import { ScoreScreen } from "./pages/ScoreScreen";
 import { Instructions } from "./pages/Instructions"; 
 import { Rules } from "./pages/Rules"; 
+import { SkillSelect } from "./pages/SkillSelect";
+
 
 const App: React.FC = () => {
   return (
@@ -15,7 +17,7 @@ const App: React.FC = () => {
         <Route path="/score" element={<ScoreScreen />} />
         <Route path="/instructions" element={<Instructions />} />
         <Route path="/rules" element={<Rules />} />
-
+  <Route path="/skill" element={<SkillSelect />} />
       </Routes>
     </BrowserRouter>
   );

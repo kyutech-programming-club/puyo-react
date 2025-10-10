@@ -9,7 +9,7 @@ export const Home: React.FC = () => {
 
       <div className="home-buttons">
 <Link
-  to="/game"
+  to="/skill"
   className="game-start-button"
 >
   ゲームスタート
