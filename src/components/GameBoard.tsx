@@ -18,8 +18,8 @@ export const Board: React.FC<Props> = ({ board, currentPuyo }) => {
         >
             {board.map((row, y) =>
                 row.map((cell, x) => {
-                    // currentPuyo と重なっている場合は currentPuyo の色を優先
                     let color = cell;
+
                     const [dx, dy] = (() => {
                         switch (currentPuyo.direction) {
                             case "up": return [0, -1];
@@ -33,7 +33,19 @@ export const Board: React.FC<Props> = ({ board, currentPuyo }) => {
                         (x === currentPuyo.x && y === currentPuyo.y) ||
                         (x === currentPuyo.x + dx && y === currentPuyo.y + dy)
                     ) {
-                        color = x === currentPuyo.x && y === currentPuyo.y ? currentPuyo.color : currentPuyo.subColor;
+                        color = x === currentPuyo.x && y === currentPuyo.y
+                            ? currentPuyo.color
+                            : currentPuyo.subColor;
+                    }
+
+                    let backgroundColor: string;
+                    switch (color) {
+                        case "red": backgroundColor = "#f55"; break;
+                        case "blue": backgroundColor = "#55f"; break;
+                        case "green": backgroundColor = "#5f5"; break;
+                        case "yellow": backgroundColor = "#ff5"; break;
+                        case "gray": backgroundColor = "#777"; break; 
+                        default: backgroundColor = "transparent"; break;
                     }
 
                     return (
@@ -42,9 +54,9 @@ export const Board: React.FC<Props> = ({ board, currentPuyo }) => {
                             style={{
                                 width: 30,
                                 height: 30,
-                                backgroundColor: color ?? "transparent", // null の場合は透明
-                                border: "1px solid #555", // マス目
-                                borderRadius: 4,           // 角を丸めたい場合
+                                backgroundColor,
+                                border: "1px solid #555",
+                                borderRadius: 4,
                             }}
                         />
                     );

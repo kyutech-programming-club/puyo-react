@@ -1,12 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Cell, CurrentPuyo } from "../components/types";
-import { FIELD_WIDTH, FIELD_HEIGHT } from "../components/types";
 import { Board } from "../components/GameBoard";
 import { useNavigate } from "react-router-dom";
 import { NextPuyoDisplay } from "../components/NextPuyoDisplay";
-import { db } from "../firebase";
-import { doc, getDoc, setDoc, onSnapshot, updateDoc } from "firebase/firestore";
-
 import {
     getAdjacentPuyoOffset,
     fixPuyo,
@@ -18,164 +14,76 @@ import {
     checkGameOver,
     initBoard,
     initCurrentPuyo,
+    addOjamaLine,
 } from "../logic/gameLogic";
 
 export const Game: React.FC = () => {
-    const [board, setBoard] = useState<Cell[][]>(initBoard());
-    const [currentPuyo, setCurrentPuyo] = useState<CurrentPuyo>(initCurrentPuyo());
-    const [isChainRunningPlayer1, setIsChainRunningPlayer1] = useState(false);
-
-    const [isChainRunningPlayer2, setIsChainRunningPlayer2] = useState(false); const [isGameOver, setIsGameOver] = useState(false);
-    const [isGameOverHandled, setIsGameOverHandled] = useState(false);
-    const [timer, setTimer] = useState(0);
-    const [poppedCount, setPoppedCount] = useState(0);
-    const [nextPuyos, setNextPuyos] = useState<CurrentPuyo[]>([
-        initCurrentPuyo(),
-        initCurrentPuyo()
-    ]);
     const navigate = useNavigate();
+
     const [player1Board, setPlayer1Board] = useState<Cell[][]>(initBoard());
     const [player1Current, setPlayer1Current] = useState<CurrentPuyo>(initCurrentPuyo());
     const [player1Next, setPlayer1Next] = useState<CurrentPuyo[]>([initCurrentPuyo(), initCurrentPuyo()]);
+    const [isChainRunningPlayer1, setIsChainRunningPlayer1] = useState(false);
+    const [isGameOverPlayer1, setIsGameOverPlayer1] = useState(false);
 
     const [player2Board, setPlayer2Board] = useState<Cell[][]>(initBoard());
     const [player2Current, setPlayer2Current] = useState<CurrentPuyo>(initCurrentPuyo());
     const [player2Next, setPlayer2Next] = useState<CurrentPuyo[]>([initCurrentPuyo(), initCurrentPuyo()]);
-    // 既存の isGameOver, isGameOverHandled の近くに追加
-    const [isGameOverPlayer1, setIsGameOverPlayer1] = useState(false);
+    const [isChainRunningPlayer2, setIsChainRunningPlayer2] = useState(false);
     const [isGameOverPlayer2, setIsGameOverPlayer2] = useState(false);
-    // 高速落下フラグ
-    const [fastDropPlayer1, setFastDropPlayer1] = useState(false);
-    const [fastDropPlayer2, setFastDropPlayer2] = useState(false);
 
+    const [poppedCount, setPoppedCount] = useState(0);
+    const [isGameOverHandled, setIsGameOverHandled] = useState(false);
 
-    const [playerId, setPlayerId] = useState<"player1" | "player2" | null>(null);
-    const [roomState, setRoomState] = useState<any>(null);
+// 左プレイヤー
+const [player1SkillOjamaUsed, setPlayer1SkillOjamaUsed] = useState(false); // Q用
+const [player1SkillRandomUsed, setPlayer1SkillRandomUsed] = useState(false); // E用
 
-    useEffect(() => {
-        const roomRef = doc(db, "rooms", "abc123");
+// 右プレイヤー
+const [player2SkillOjamaUsed, setPlayer2SkillOjamaUsed] = useState(false); // P用
+const [player2SkillRandomUsed, setPlayer2SkillRandomUsed] = useState(false); // L用
 
-        const joinRoom = async () => {
-            const snap = await getDoc(roomRef);
+    // --- 最新のぷよを useRef に保持 ---
+    const player1CurrentRef = useRef(player1Current);
+    const player2CurrentRef = useRef(player2Current);
+    useEffect(() => { player1CurrentRef.current = player1Current; }, [player1Current]);
+    useEffect(() => { player2CurrentRef.current = player2Current; }, [player2Current]);
 
-            if (!snap.exists()) {
-                // 部屋が存在しなかったら新規作成
-                await setDoc(roomRef, {
-                    player1: "joined",
-                    player2: null,
-                    status: "waiting",
-                });
-                setPlayerId("player1");
-            } else {
-                const data = snap.data();
-                if (data.player1 === "waiting") {
-                    await updateDoc(roomRef, { player1: "joined" });
-                    setPlayerId("player1");
-                } else if (data.player2 === "waiting") {
-                    await updateDoc(roomRef, { player2: "joined", status: "playing" });
-                    setPlayerId("player2");
-                } else {
-                    alert("満員です！");
-                }
-
-            }
-
-            // リアルタイム監視
-            onSnapshot(roomRef, (snap) => {
-                setRoomState(snap.data());
-            });
-        };
-
-        joinRoom();
-    }, []);
-
-
-    // 左プレイヤー落下
-    const moveDownPlayer1 = () => {
-        if (isChainRunningPlayer1) return;
-
-        const [dx, dy] = getAdjacentPuyoOffset(player1Current.direction);
-
-        const mainNextY = player1Current.y + 1;
-        const subNextY = player1Current.y + dy + 1;
-        const subX = player1Current.x + dx;
-
-        const isMainBlocked =
-            mainNextY >= FIELD_HEIGHT || player1Board[mainNextY][player1Current.x] !== null;
-        const isSubBlocked =
-            subNextY >= FIELD_HEIGHT ||
-            subX < 0 ||
-            subX >= FIELD_WIDTH ||
-            player1Board[subNextY][subX] !== null;
-
-        if (isMainBlocked || isSubBlocked) {
-            fixPuyoAndCheckPlayer1();
-        } else {
-            setPlayer1Current((prev) => ({
-                ...prev,
-                y: prev.y + 1,
-            }));
-        }
-    };
-
-    // 右プレイヤー落下
-    const moveDownPlayer2 = () => {
-        if (isChainRunningPlayer2) return;
-
-        const [dx, dy] = getAdjacentPuyoOffset(player2Current.direction);
-
-        const mainNextY = player2Current.y + 1;
-        const subNextY = player2Current.y + dy + 1;
-        const subX = player2Current.x + dx;
-
-        const isMainBlocked =
-            mainNextY >= FIELD_HEIGHT || player2Board[mainNextY][player2Current.x] !== null;
-        const isSubBlocked =
-            subNextY >= FIELD_HEIGHT ||
-            subX < 0 ||
-            subX >= FIELD_WIDTH ||
-            player2Board[subNextY][subX] !== null;
-
-        if (isMainBlocked || isSubBlocked) {
-            fixPuyoAndCheckPlayer2();
-        } else {
-            setPlayer2Current((prev) => ({
-                ...prev,
-                y: prev.y + 1,
-            }));
-        }
-    };
-
-
-    // 左プレイヤー用固定＋連鎖処理
-    const fixPuyoAndCheckPlayer1 = () => {
-        setIsChainRunningPlayer1(true);
-
-        let newBoard = fixPuyo(player1Board, player1Current);
+    // --- 高速落下後の共通処理 ---
+    const handleFixAndChain = (
+        current: CurrentPuyo,
+        board: Cell[][],
+        setBoard: React.Dispatch<React.SetStateAction<Cell[][]>>,
+        setCurrent: React.Dispatch<React.SetStateAction<CurrentPuyo>>,
+        next: CurrentPuyo[],
+        setNext: React.Dispatch<React.SetStateAction<CurrentPuyo[]>>,
+        setIsChainRunning: React.Dispatch<React.SetStateAction<boolean>>,
+        sendOjama: () => void,
+        setIsGameOver: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+        setIsChainRunning(true);
+        let newBoard = fixPuyo(board, current);
         newBoard = applyGravity(newBoard);
-        setPlayer1Board(newBoard);
+        setBoard(newBoard);
 
         const chainLoop = () => {
             const { newBoard: poppedBoard, popped, poppedNum } = checkAndPopPuyos(newBoard);
             if (popped) {
                 newBoard = applyGravity(poppedBoard);
-                setPlayer1Board(newBoard);
-                setPoppedCount((prev) => prev + poppedNum); // スコアは共通にしてもOK
+                setBoard(newBoard);
+                setPoppedCount(prev => prev + poppedNum);
+                if (poppedNum >= 2) sendOjama();
                 setTimeout(chainLoop, 300);
             } else {
-                setPlayer1Board(newBoard);
-
+                setBoard(newBoard);
                 if (checkGameOver(newBoard)) {
-                    setIsGameOverPlayer1(true); // 左プレイヤー
+                    setIsGameOver(true);
                 }
-
-
-                setIsChainRunningPlayer1(false);
+                setIsChainRunning(false);
 
                 if (!checkGameOver(newBoard)) {
-                    // 次のぷよに切り替え
-                    setPlayer1Current(player1Next[0]);
-                    setPlayer1Next((prev) => [prev[1], initCurrentPuyo()]);
+                    setCurrent(next[0]);
+                    setNext(prev => [prev[1], initCurrentPuyo()]);
                 }
             }
         };
@@ -183,305 +91,237 @@ export const Game: React.FC = () => {
         setTimeout(chainLoop, 300);
     };
 
-    // --- 右プレイヤー ---
-    const fixPuyoAndCheckPlayer2 = () => {
-        setIsChainRunningPlayer2(true);
+const skillRemoveOjama = (player: 1 | 2) => {
+    if (player === 1 && !player1SkillOjamaUsed) {
+        setPlayer1Board(prev => prev.map(row => row.map(cell => cell === "gray" ? null : cell)));
+        setPlayer1SkillOjamaUsed(true);
+    } else if (player === 2 && !player2SkillOjamaUsed) {
+        setPlayer2Board(prev => prev.map(row => row.map(cell => cell === "gray" ? null : cell)));
+        setPlayer2SkillOjamaUsed(true);
+    }
+};
 
-        let newBoard = fixPuyo(player2Board, player2Current);
-        newBoard = applyGravity(newBoard);
-        setPlayer2Board(newBoard);
+const skillRemoveRandomColor = (player: 1 | 2) => {
+    if (player === 1 && !player1SkillRandomUsed) {
+        setPlayer1Board(prev => {
+            const colors = Array.from(new Set(prev.flat().filter(c => c && c !== "gray"))) as string[];
+            if (!colors.length) return prev;
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            return prev.map(row => row.map(cell => cell === randomColor ? null : cell));
+        });
+        setPlayer1SkillRandomUsed(true);
+    } else if (player === 2 && !player2SkillRandomUsed) {
+        setPlayer2Board(prev => {
+            const colors = Array.from(new Set(prev.flat().filter(c => c && c !== "gray"))) as string[];
+            if (!colors.length) return prev;
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            return prev.map(row => row.map(cell => cell === randomColor ? null : cell));
+        });
+        setPlayer2SkillRandomUsed(true);
+    }
+};
+    // --- 左右プレイヤー用固定処理 ---
+    const fixPlayer1 = (current: CurrentPuyo) => {
+        handleFixAndChain(
+            current,
+            player1Board,
+            setPlayer1Board,
+            setPlayer1Current,
+            player1Next,
+            setPlayer1Next,
+            setIsChainRunningPlayer1,
+            () => setPlayer2Board(prev => addOjamaLine(prev)),
+            setIsGameOverPlayer1
+        );
+    };
 
-        const chainLoop = () => {
-            const { newBoard: poppedBoard, popped, poppedNum } = checkAndPopPuyos(newBoard);
-            if (popped) {
-                newBoard = applyGravity(poppedBoard);
-                setPlayer2Board(newBoard);
-                setPoppedCount((prev) => prev + poppedNum); // スコアは共通にしてもOK
-                setTimeout(chainLoop, 300);
-            } else {
-                setPlayer2Board(newBoard);
+    const fixPlayer2 = (current: CurrentPuyo) => {
+        handleFixAndChain(
+            current,
+            player2Board,
+            setPlayer2Board,
+            setPlayer2Current,
+            player2Next,
+            setPlayer2Next,
+            setIsChainRunningPlayer2,
+            () => setPlayer1Board(prev => addOjamaLine(prev)),
+            setIsGameOverPlayer2
+        );
+    };
 
-                if (checkGameOver(newBoard)) {
-                    setIsGameOverPlayer2(true); // 右プレイヤー
+    // --- 回転・移動 ---
+    const rotateWithWallKick = (current: CurrentPuyo, board: Cell[][], clockwise = true): CurrentPuyo => {
+        const dirs: CurrentPuyo["direction"][] = ["up", "right", "down", "left"];
+        const nextDir = dirs[(dirs.indexOf(current.direction) + (clockwise ? 1 : 3)) % 4];
+
+        if (canPlacePuyo(board, current.x, current.y, nextDir)) return { ...current, direction: nextDir };
+        if (canPlacePuyo(board, current.x - 1, current.y, nextDir)) return { ...current, direction: nextDir, x: current.x - 1 };
+        if (canPlacePuyo(board, current.x + 1, current.y, nextDir)) return { ...current, direction: nextDir, x: current.x + 1 };
+        return current;
+    };
+
+    const moveHorizontal = (current: CurrentPuyo, board: Cell[][], dx: number) =>
+        canMoveHorizontal(board, current, dx) ? { ...current, x: current.x + dx } : current;
+
+    // --- キー操作 ---
+useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        const key = e.key.toLowerCase();
+
+        // 矢印キーとスペース・zなど、ゲームで使うキーはスクロール防止
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d", "z", "enter"].includes(key)) {
+            e.preventDefault();
+        }
+
+        // --- 左プレイヤー ---
+        if (!isChainRunningPlayer1) {
+            switch (key) {
+                case "s":
+                    setPlayer1Current(prev => rotateWithWallKick(prev, player1Board));
+                    break;
+                case "w":
+                    setPlayer1Current(prev => rotateWithWallKick(prev, player1Board, false));
+                    break;
+                case "a":
+                    setPlayer1Current(prev => moveHorizontal(prev, player1Board, -1));
+                    break;
+                case "d":
+                    setPlayer1Current(prev => moveHorizontal(prev, player1Board, 1));
+                    break;
+                case "z": {
+                    const current = player1CurrentRef.current;
+                    const dropY = getDropPosition(player1Board, current);
+                    fixPlayer1({ ...current, y: dropY });
+                    break;
                 }
-
-
-                setIsChainRunningPlayer2(false);
-
-                if (!checkGameOver(newBoard)) {
-                    // 次のぷよに切り替え
-                    setPlayer2Current(player2Next[0]);
-                    setPlayer2Next((prev) => [prev[1], initCurrentPuyo()]);
-                }
+                case "q":
+                    skillRemoveOjama(1);
+                    break;
+                case "e":
+                    skillRemoveRandomColor(1);
+                    break;
             }
-        };
+        }
 
-        setTimeout(chainLoop, 300);
+        // --- 右プレイヤー ---
+        if (!isChainRunningPlayer2) {
+            switch (key) {
+                case "arrowdown":
+                    setPlayer2Current(prev => rotateWithWallKick(prev, player2Board));
+                    break;
+                case "arrowup":
+                    setPlayer2Current(prev => rotateWithWallKick(prev, player2Board, false));
+                    break;
+                case "arrowleft":
+                    setPlayer2Current(prev => moveHorizontal(prev, player2Board, -1));
+                    break;
+                case "arrowright":
+                    setPlayer2Current(prev => moveHorizontal(prev, player2Board, 1));
+                    break;
+                case "enter": {
+                    const current = player2CurrentRef.current;
+                    const dropY = getDropPosition(player2Board, current);
+                    fixPlayer2({ ...current, y: dropY });
+                    break;
+                }
+                case "p":
+                    skillRemoveOjama(2);
+                    break;
+                case "l":
+                    skillRemoveRandomColor(2);
+                    break;
+            }
+        }
     };
 
-    // 回転（右回転）
-    const rotatePlayer1 = () => {
-        if (isChainRunningPlayer1) return;
-        setPlayer1Current(prev => {
-            const dirs: CurrentPuyo["direction"][] = ["up", "right", "down", "left"];
-            const nextDir = dirs[(dirs.indexOf(prev.direction) + 1) % 4];
-            if (canPlacePuyo(player1Board, prev.x, prev.y, nextDir)) return { ...prev, direction: nextDir };
-            return prev;
-        });
-    };
-
-    // 回転（左回転）
-    const rotateLeftPlayer1 = () => {
-        if (isChainRunningPlayer1) return;
-        setPlayer1Current(prev => {
-            const dirs: CurrentPuyo["direction"][] = ["up", "right", "down", "left"];
-            const nextDir = dirs[(dirs.indexOf(prev.direction) + 3) % 4]; // -1 mod4
-            if (canPlacePuyo(player1Board, prev.x, prev.y, nextDir)) return { ...prev, direction: nextDir };
-            return prev;
-        });
-    };
-
-    // 横移動
-    const moveHorizontalPlayer1 = (dx: number) => {
-        if (isChainRunningPlayer1) return;
-        setPlayer1Current(prev => {
-            if (canMoveHorizontal(player1Board, prev, dx)) return { ...prev, x: prev.x + dx };
-            return prev;
-        });
-    };
-
-    const rotatePlayer2 = () => {
-        if (isChainRunningPlayer2) return;
-        setPlayer2Current(prev => {
-            const dirs: CurrentPuyo["direction"][] = ["up", "right", "down", "left"];
-            const nextDir = dirs[(dirs.indexOf(prev.direction) + 1) % 4];
-            if (canPlacePuyo(player2Board, prev.x, prev.y, nextDir)) return { ...prev, direction: nextDir };
-            return prev;
-        });
-    };
-
-    const rotateLeftPlayer2 = () => {
-        if (isChainRunningPlayer2) return;
-        setPlayer2Current(prev => {
-            const dirs: CurrentPuyo["direction"][] = ["up", "right", "down", "left"];
-            const nextDir = dirs[(dirs.indexOf(prev.direction) + 3) % 4];
-            if (canPlacePuyo(player2Board, prev.x, prev.y, nextDir)) return { ...prev, direction: nextDir };
-            return prev;
-        });
-    };
-
-    const moveHorizontalPlayer2 = (dx: number) => {
-        if (isChainRunningPlayer2) return;
-        setPlayer2Current(prev => {
-            if (canMoveHorizontal(player2Board, prev, dx)) return { ...prev, x: prev.x + dx };
-            return prev;
-        });
-    };
-
-
-    // Player1: Shift押した瞬間に落とす
-    const dropPlayer1 = () => {
-        if (isChainRunningPlayer1) return;
-
-        setPlayer1Current(prev => ({
-            ...prev,
-            y: getDropPosition(player1Board, prev),
-        }));
-
-        // 固定＋連鎖処理も呼ぶ
-        fixPuyoAndCheckPlayer1();
-    };
-
-    // Player2: Enter押した瞬間に落とす
-    const dropPlayer2 = () => {
-        if (isChainRunningPlayer2) return;
-
-        setPlayer2Current(prev => ({
-            ...prev,
-            y: getDropPosition(player2Board, prev),
-        }));
-
-        fixPuyoAndCheckPlayer2();
-    };
-
-
-    // キーイベント登録
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+}, [player1Board, player2Board, isChainRunningPlayer1, isChainRunningPlayer2]);
+    // --- 自動落下 ---
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // 左プレイヤー操作制限
+        if (isGameOverPlayer1 || isGameOverPlayer2) return;
+        const interval = setInterval(() => {
             if (!isChainRunningPlayer1) {
-                switch (e.key.toLowerCase()) {
-                    case "s": rotatePlayer1(); break;
-                    case "w": rotateLeftPlayer1(); break;
-                    case "a": moveHorizontalPlayer1(-1); break;
-                    case "d": moveHorizontalPlayer1(1); break;
-                    case " ": // 一気に落下
-                        setPlayer1Current(prev => ({
-                            ...prev,
-                            y: getDropPosition(player1Board, prev),
-                        }));
-                        fixPuyoAndCheckPlayer1();
-                        break;
-                }
-            }
+                const current = player1CurrentRef.current;
+                const [dx, dy] = getAdjacentPuyoOffset(current.direction);
+                const mainNextY = current.y + 1;
+                const subNextY = current.y + dy + 1;
+                const subX = current.x + dx;
+                const mainBlocked = mainNextY >= 12 || player1Board[mainNextY][current.x] !== null;
+                const subBlocked = subNextY >= 12 || subX < 0 || subX >= 6 || player1Board[subNextY][subX] !== null;
 
-            // 右プレイヤー操作制限
+                if (mainBlocked || subBlocked) fixPlayer1(current);
+                else setPlayer1Current(prev => ({ ...prev, y: prev.y + 1 }));
+            }
+        }, 500);
+        return () => clearInterval(interval);
+    }, [player1Board, isChainRunningPlayer1, isGameOverPlayer1, isGameOverPlayer2]);
+
+    useEffect(() => {
+        if (isGameOverPlayer1 || isGameOverPlayer2) return;
+        const interval = setInterval(() => {
             if (!isChainRunningPlayer2) {
-                switch (e.code) {
-                    case "ArrowDown": rotatePlayer2(); break;
-                    case "ArrowUp": rotateLeftPlayer2(); break;
-                    case "ArrowLeft": moveHorizontalPlayer2(-1); break;
-                    case "ArrowRight": moveHorizontalPlayer2(1); break;
-                    case "Enter": // 一気に落下
-                        setPlayer2Current(prev => ({
-                            ...prev,
-                            y: getDropPosition(player2Board, prev),
-                        }));
-                        fixPuyoAndCheckPlayer2();
-                        break;
-                }
-            }
-        };
+                const current = player2CurrentRef.current;
+                const [dx, dy] = getAdjacentPuyoOffset(current.direction);
+                const mainNextY = current.y + 1;
+                const subNextY = current.y + dy + 1;
+                const subX = current.x + dx;
+                const mainBlocked = mainNextY >= 12 || player2Board[mainNextY][current.x] !== null;
+                const subBlocked = subNextY >= 12 || subX < 0 || subX >= 6 || player2Board[subNextY][subX] !== null;
 
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [player1Board, player2Board, isChainRunningPlayer1, isChainRunningPlayer2]);
-
-    // タイマー処理
-    useEffect(() => {
-        if (isGameOver) return;
-
-        const interval = setInterval(() => {
-            setTimer((prev) => prev + 100);
-        }, 100);
-
-        return () => clearInterval(interval);
-    }, [isGameOver]);
-
-    // 落下ループ（左プレイヤーのみ）
-    useEffect(() => {
-        if (isGameOver) return;
-
-        const interval = setInterval(() => {
-            const [dx, dy] = getAdjacentPuyoOffset(player1Current.direction);
-
-            const mainNextY = player1Current.y + 1;
-            const subNextY = player1Current.y + dy + 1;
-            const subX = player1Current.x + dx;
-
-            const isMainBlocked =
-                mainNextY >= FIELD_HEIGHT || player1Board[mainNextY][player1Current.x] !== null;
-            const isSubBlocked =
-                subNextY >= FIELD_HEIGHT ||
-                subX < 0 ||
-                subX >= FIELD_WIDTH ||
-                player1Board[subNextY][subX] !== null;
-
-            if (isMainBlocked || isSubBlocked) {
-                fixPuyoAndCheckPlayer1();
-            } else {
-                setPlayer1Current((prev) => ({
-                    ...prev,
-                    y: prev.y + 1,
-                }));
+                if (mainBlocked || subBlocked) fixPlayer2(current);
+                else setPlayer2Current(prev => ({ ...prev, y: prev.y + 1 }));
             }
         }, 500);
-
         return () => clearInterval(interval);
-    }, [player1Board, player1Current, isChainRunningPlayer1, isGameOver]);
+    }, [player2Board, isChainRunningPlayer2, isGameOverPlayer1, isGameOverPlayer2]);
 
-    // --- 右プレイヤー落下 ---
-    useEffect(() => {
-        if (isGameOver) return;
+    // --- スコアとゲームオーバー ---
+    const score = poppedCount * 250;
 
-        const interval = setInterval(() => {
-            const [dx, dy] = getAdjacentPuyoOffset(player2Current.direction);
-
-            const mainNextY = player2Current.y + 1;
-            const subNextY = player2Current.y + dy + 1;
-            const subX = player2Current.x + dx;
-
-            const isMainBlocked =
-                mainNextY >= FIELD_HEIGHT || player2Board[mainNextY][player2Current.x] !== null;
-            const isSubBlocked =
-                subNextY >= FIELD_HEIGHT ||
-                subX < 0 ||
-                subX >= FIELD_WIDTH ||
-                player2Board[subNextY][subX] !== null;
-
-            if (isMainBlocked || isSubBlocked) {
-                fixPuyoAndCheckPlayer2();
-            } else {
-                setPlayer2Current((prev) => ({
-                    ...prev,
-                    y: prev.y + 1,
-                }));
-            }
-        }, 500);
-
-        return () => clearInterval(interval);
-    }, [player2Board, player2Current, isChainRunningPlayer2, isGameOver]);
-
-
-    // スコア計算
-    const score = poppedCount * 250 + Math.floor(timer / 100) * 10;
-
-
-    // Game.tsx 内の useEffect (ゲームオーバー処理)
     useEffect(() => {
         if ((isGameOverPlayer1 || isGameOverPlayer2) && !isGameOverHandled) {
             setIsGameOverHandled(true);
-
-            let scoreData;
-            if (isGameOverPlayer1) {
-                scoreData = { score, player: 2 };
-            } else if (isGameOverPlayer2) {
-                scoreData = { score, player: 1 };
-            }
-
-            navigate("/score", { state: scoreData });
-
-            resetGame();
+            navigate("/score", { state: { score, player: isGameOverPlayer1 ? 2 : 1 } });
         }
-    }, [isGameOverPlayer1, isGameOverPlayer2, isGameOverHandled, poppedCount, timer]);
+    }, [isGameOverPlayer1, isGameOverPlayer2, isGameOverHandled, poppedCount]);
 
+return (
+<div
+  style={{
+    display: "flex",
+    justifyContent: "center",   // 横方向の中央揃え
+    alignItems: "center",       // 縦方向の中央揃え
+    height: "100vh",
+    backgroundColor: "#222",
+    padding: 20,
+    overflow: "hidden",
+    gap: "40px",                // 左右のプレイヤー間の隙間
+  }}
+>
+  {/* 左プレイヤー */}
+  <div style={{ textAlign: "center", color: "#fff" }}>
+    <Board board={player1Board} currentPuyo={player1Current} />
+    <NextPuyoDisplay nextPuyos={player1Next} position="left" />
+    <div style={{ marginTop: 10 }}>
+      スキル1（灰色消去）: {player1SkillOjamaUsed ? "使用済み" : "未使用"} (Q)
+      <br />
+      スキル2（ランダム色消去）: {player1SkillRandomUsed ? "使用済み" : "未使用"} (E)
+    </div>
+  </div>
 
-    // ゲームリセット関数
-    const resetGame = () => {
-        setIsGameOverHandled(false);
-        setBoard(initBoard());
-        setCurrentPuyo(initCurrentPuyo());
-        setIsChainRunningPlayer1(false);
-        setIsChainRunningPlayer2(false);
-        setTimer(0);
-        setPoppedCount(0);
-    };
-
-
-    return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "space-around",
-                alignItems: "flex-start",
-                height: "100vh",
-                backgroundColor: "#222",
-                padding: 20,
-            }}
-        >
-            {/* プレイヤー1画面 */}
-            <div>
-                <Board board={player1Board} currentPuyo={player1Current} />
-                <NextPuyoDisplay nextPuyos={player1Next} position="left" />
-            </div>
-
-            {/* プレイヤー2画面 */}
-            <div>
-                <Board board={player2Board} currentPuyo={player2Current} />
-                <NextPuyoDisplay nextPuyos={player2Next} position="right" />
-            </div>
-        </div>
-    );
-}
+  {/* 右プレイヤー */}
+  <div style={{ textAlign: "center", color: "#fff" }}>
+    <Board board={player2Board} currentPuyo={player2Current} />
+    <NextPuyoDisplay nextPuyos={player2Next} position="right" />
+    <div style={{ marginTop: 10 }}>
+      スキル1（灰色消去）: {player2SkillOjamaUsed ? "使用済み" : "未使用"} (P)
+      <br />
+      スキル2（ランダム色消去）: {player2SkillRandomUsed ? "使用済み" : "未使用"} (L)
+    </div>
+  </div>
+</div>
+);
+};
 
 export default Game;

@@ -1,10 +1,9 @@
 import { useNavigate, useLocation } from "react-router-dom";
 
 export const ScoreScreen: React.FC = () => {
-    const navigate = useNavigate(); // ← navigate という変数を定義
-    const location = useLocation(); // ← location という変数を定義
+    const navigate = useNavigate(); 
+    const location = useLocation(); 
 
-    const score = location.state?.score ?? 0;
     const player = location.state?.player ?? 1;
 
     return (

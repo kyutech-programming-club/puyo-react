@@ -1,5 +1,4 @@
-export type Cell = "red" | "green" | "blue" | "yellow" | null;
-
+export type Cell = "red" | "green" | "blue" | "yellow" | "gray" | null;
 export type CurrentPuyo = {
     x: number;
     y: number;
