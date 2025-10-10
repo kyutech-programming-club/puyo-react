@@ -11,26 +11,22 @@ export const Instructions: React.FC = () => {
         <div className="instructions-section">
           <h2>左プレイヤー (1P)</h2>
           <ul>
-            <li><span className="key">W</span> : ぷよを回転（反時計回り）</li>
-            <li><span className="key">S</span> : ぷよを回転（時計回り）</li>
+            <li><span className="key">W</span> : ブロックを回転（反時計回り）</li>
+            <li><span className="key">S</span> : ブロックを回転（時計回り）</li>
             <li><span className="key">A</span> : 左に移動</li>
             <li><span className="key">D</span> : 右に移動</li>
             <li><span className="key">Z</span> : 早く落下</li>
-            <li><span className="key">Q</span> : スキル1（灰色全消し）</li>
-            <li><span className="key">E</span> : スキル2（ランダム消去）</li>
           </ul>
         </div>
 
         <div className="instructions-section">
           <h2>右プレイヤー (2P)</h2>
           <ul>
-            <li><span className="key">↑</span> : ぷよを回転（反時計回り）</li>
-            <li><span className="key">↓</span> : ぷよを回転（時計回り）</li>
+            <li><span className="key">↑</span> : ブロックを回転（反時計回り）</li>
+            <li><span className="key">↓</span> : ブロックを回転（時計回り）</li>
             <li><span className="key">←</span> : 左に移動</li>
             <li><span className="key">→</span> : 右に移動</li>
             <li><span className="key">Enter</span> : 早く落下</li>
-            <li><span className="key">P</span> : スキル1（灰色全消し）</li>
-            <li><span className="key">L</span> : スキル2（ランダム消去）</li>
           </ul>
         </div>
       </div>

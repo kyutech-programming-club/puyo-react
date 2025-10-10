@@ -1,0 +1,88 @@
+/* SkillSelect.css */
+.skill-select-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  padding-top: 80px; /* 上の余白 */
+  background-color: #0b0c17;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  overflow-y: auto;
+}
+
+.players-select {
+  display: flex;
+  gap: 3rem; /* P1とP2の間隔 */
+  margin: 2rem 0;
+  flex-wrap: wrap; /* 小さい画面でも折り返す */
+  justify-content: center;
+}
+
+.player-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #1c1e2a, #2c2f41);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  min-width: 200px;
+}
+
+.player-select h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+
+.player-select button {
+  margin: 0.5rem 0;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(45deg, #00d4ff, #7b5fff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.player-select button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 212, 255, 0.5);
+}
+
+.player-select button.selected {
+  background: linear-gradient(45deg, #ff6a00, #ff00d4);
+  box-shadow: 0 0 15px rgba(255, 106, 0, 0.7);
+}
+
+.start-button {
+  margin-top: 2rem;
+  padding: 1rem 3rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(45deg, #00d4ff, #7b5fff);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.start-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 20px rgba(0, 212, 255, 0.5);
+}
+
+/* optional: スクロールバー */
+.skill-select-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.skill-select-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.5);
+  border-radius: 4px;
+}
