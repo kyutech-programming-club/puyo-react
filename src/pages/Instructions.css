@@ -1,0 +1,71 @@
+.instructions-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: #0b0c17;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+}
+
+.instructions-title {
+  font-size: 4rem;
+  margin-bottom: 2rem;
+  color: #00d4ff;
+}
+
+.instructions-players {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+.instructions-section {
+  background: rgba(10,10,30,0.8);
+  padding: 2rem;
+  border-radius: 12px;
+  flex: 1;
+}
+
+.instructions-section h2 {
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  color: #7b5fff;
+}
+
+.instructions-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.instructions-section li {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.key {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  margin-right: 0.5rem;
+  background: #00d4ff;
+  color: #000;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.back-button {
+  position: fixed;   /* 左上に固定 */
+  top: 20px;
+  left: 20px;
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(45deg, #00d4ff, #7b5fff);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.3rem;
+  z-index: 100; /* 他の要素の上に表示 */
+}

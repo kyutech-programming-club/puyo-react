@@ -1,0 +1,167 @@
+/* --- 全体 --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(ellipse at bottom, #0b0c17 0%, #000 100%);
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    overflow: hidden;
+}
+
+/* --- ゲームコンテナ --- */
+.game-container {
+    display: flex;
+    justify-content: center; /* 左右ボードを中央に配置 */
+    align-items: center;
+    gap: 120px; /* ← ここを増やすと左右のボードが離れる */
+    height: 100vh;
+    padding: 20px;
+    position: relative;
+}
+
+/* --- プレイヤーボード --- */
+.player-board {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(10,10,30,0.6);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,200,255,0.5), 0 0 40px rgba(255,0,255,0.3);
+}
+
+/* --- ボード中央配置 --- */
+.board-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 10px;
+    background: rgba(10,10,30,0.6);
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,200,255,0.5), 0 0 40px rgba(255,0,255,0.3);
+}
+
+/* --- ゲーム盤のぷよ 蛍光光る共通デザイン --- */
+.puyo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* 丸 */
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px #fff;
+    animation: glow 2.5s infinite ease-in-out;
+    transition: all 0.3s;
+}
+
+/* --- NextPuyo 四角にして光らせる --- */
+.next-puyo {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px; /* 四角に */
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px #fff;
+    animation: glow 2.5s infinite ease-in-out;
+    transition: all 0.3s;
+}
+
+/* 色別シャドウ */
+.puyo.red, .next-puyo.red { background-color: #f55; box-shadow: 0 0 15px #f77; }
+.puyo.blue, .next-puyo.blue { background-color: #55f; box-shadow: 0 0 15px #77f; }
+.puyo.green, .next-puyo.green { background-color: #5f5; box-shadow: 0 0 15px #7f7; }
+.puyo.yellow, .next-puyo.yellow { background-color: #ff5; box-shadow: 0 0 15px #ff7; }
+.puyo.gray, .next-puyo.gray { background-color: #777; box-shadow: 0 0 15px #aaa; }
+
+/* 光のアニメーション */
+@keyframes glow {
+    0% { box-shadow: 0 0 10px #fff; transform: scale(0.97); }
+    50% { box-shadow: 0 0 22px #fff; transform: scale(1.05); }
+    100% { box-shadow: 0 0 10px #fff; transform: scale(0.97); }
+}
+
+/* --- スキル表示 --- */
+.skill-status {
+    font-size: 0.9rem;
+    background: rgba(0,0,50,0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+}
+
+/* --- NextPuyo 表示枠 --- */
+.next-puyo-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,50,0.6);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px #00d4ff, 0 0 30px #7b5fff;
+    min-width: 80px;
+    overflow: hidden;
+}
+
+.next-puyo-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 5px #00d4ff, 0 0 8px #7b5fff;
+    margin-bottom: 8px;
+}
+
+.next-puyo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+
+.next-puyo-row {
+    display: flex;
+    gap: 6px;
+    animation: slideUp 0.5s ease forwards;
+}
+
+/* 上にスライドするアニメーション */
+@keyframes slideUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+
+/* --- プレイヤーサイドパネル --- */
+.player-side-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px; /* NextPuyo とスキル間の間隔 */
+}
+
+/* --- スキルボタン --- */
+.skill-button {
+    width: 140px;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(135deg, #3bcaff, #1e90ff, #00bfff);
+    box-shadow: 0 0 8px #3bcaff, 0 0 15px #1e90ff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* ホバー時の光り方 */
+.skill-button:hover:not(.used) {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px #3bcaff, 0 0 20px #1e90ff;
+}
+
+/* 使用済みは灰色に */
+.skill-button.used {
+    background: #555;
+    box-shadow: 0 0 5px #888;
+    color: #ccc;
+    cursor: default;
+}

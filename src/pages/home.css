@@ -1,0 +1,79 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #0b0c17;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* タイトル */
+.home-title {
+  font-size: 5rem;
+  font-weight: 900;
+  margin-bottom: 4rem;
+  background: linear-gradient(45deg, #ff6f91, #ffeb3b, #6bffeb, #6b5fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* ボタン群 */
+.home-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.home-button {
+  padding: 1rem 3rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 12px;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-start-button {
+  padding: 1rem 3rem;      /* 大きめのパディング */
+  font-size: 2rem;         /* 文字も大きく */
+  font-weight: bold;
+  background: linear-gradient(45deg, #ff416c, #ff4b2b); /* 赤系グラデーション */
+  color: #fff;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-start-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(255, 75, 43, 0.7);
+}
+
+/* 操作説明ボタン 青系 */
+.instructions-button {
+  background: linear-gradient(45deg, #00d4ff, #007bff);
+  color: #fff;
+}
+
+.instructions-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px #00d4ff;
+}
+
+/* ルール説明ボタン 緑系 */
+.rules-button {
+  background: linear-gradient(45deg, #00ff9d, #00c76b);
+  color: #fff;
+}
+
+.rules-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px #00ff9d;
+}

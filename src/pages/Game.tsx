@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import './Game.css';
 import type { Cell, CurrentPuyo } from "../components/types";
 import { Board } from "../components/GameBoard";
 import { useNavigate } from "react-router-dom";
@@ -286,41 +287,77 @@ useEffect(() => {
         }
     }, [isGameOverPlayer1, isGameOverPlayer2, isGameOverHandled, poppedCount]);
 
-return (
-<div
-  style={{
-    display: "flex",
-    justifyContent: "center",   // 横方向の中央揃え
-    alignItems: "center",       // 縦方向の中央揃え
-    height: "100vh",
-    backgroundColor: "#222",
-    padding: 20,
-    overflow: "hidden",
-    gap: "40px",                // 左右のプレイヤー間の隙間
-  }}
->
-  {/* 左プレイヤー */}
-  <div style={{ textAlign: "center", color: "#fff" }}>
-    <Board board={player1Board} currentPuyo={player1Current} />
-    <NextPuyoDisplay nextPuyos={player1Next} position="left" />
-    <div style={{ marginTop: 10 }}>
-      スキル1（灰色消去）: {player1SkillOjamaUsed ? "使用済み" : "未使用"} (Q)
-      <br />
-      スキル2（ランダム色消去）: {player1SkillRandomUsed ? "使用済み" : "未使用"} (E)
-    </div>
-  </div>
+// Game.tsx の return の前あたりに追加
+useEffect(() => {
+  const body = document.body;
+  const stars: HTMLDivElement[] = [];
 
-  {/* 右プレイヤー */}
-  <div style={{ textAlign: "center", color: "#fff" }}>
-    <Board board={player2Board} currentPuyo={player2Current} />
-    <NextPuyoDisplay nextPuyos={player2Next} position="right" />
-    <div style={{ marginTop: 10 }}>
-      スキル1（灰色消去）: {player2SkillOjamaUsed ? "使用済み" : "未使用"} (P)
-      <br />
-      スキル2（ランダム色消去）: {player2SkillRandomUsed ? "使用済み" : "未使用"} (L)
+  for (let i = 0; i < 50; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 3 + 1;
+    star.style.width = `${size}px`;
+    star.style.height = `${size}px`;
+    star.style.top = `${Math.random() * window.innerHeight}px`;
+    star.style.left = `${Math.random() * window.innerWidth}px`;
+    star.style.animationDuration = `${Math.random() * 5 + 3}s`;
+    body.appendChild(star);
+    stars.push(star);
+  }
+
+  return () => stars.forEach(s => s.remove());
+}, []);
+
+
+return (
+  <div className="game-container">
+    {/* 左プレイヤー */}
+    <div className="player-board">
+      <Board board={player1Board} currentPuyo={player1Current} />
+      
+      {/* NextPuyo + スキル縦並び */}
+      <div className="player-side-panel">
+        <NextPuyoDisplay nextPuyos={player1Next} />
+
+        <div
+          className={`skill-button ${player1SkillOjamaUsed ? "used" : ""}`}
+          onClick={() => skillRemoveOjama(1)}
+        >
+          スキル1: 灰色全消し (Qキー)
+        </div>
+
+        <div
+          className={`skill-button ${player1SkillRandomUsed ? "used" : ""}`}
+          onClick={() => skillRemoveRandomColor(1)}
+        >
+          スキル2: ランダム消去 (Eキー)
+        </div>
+      </div>
+    </div>
+
+    {/* 右プレイヤー */}
+    <div className="player-board">
+      <Board board={player2Board} currentPuyo={player2Current} />
+
+      <div className="player-side-panel">
+        <NextPuyoDisplay nextPuyos={player2Next} />
+
+        <div
+          className={`skill-button ${player2SkillOjamaUsed ? "used" : ""}`}
+          onClick={() => skillRemoveOjama(2)}
+        >
+          スキル1: 灰色全消し (Pキー)
+        </div>
+
+        <div
+          className={`skill-button ${player2SkillRandomUsed ? "used" : ""}`}
+          onClick={() => skillRemoveRandomColor(2)}
+        >
+          スキル2: ランダム消去 (Lキー)
+        </div>
+      </div>
     </div>
   </div>
-</div>
 );
 };
 
