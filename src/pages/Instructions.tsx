@@ -15,7 +15,7 @@ export const Instructions: React.FC = () => {
             <li><span className="key">S</span> : ブロックを回転（時計回り）</li>
             <li><span className="key">A</span> : 左に移動</li>
             <li><span className="key">D</span> : 右に移動</li>
-            <li><span className="key">Z</span> : 早く落下</li>
+            <li><span className="key">Space</span> : 早く落下</li>
           </ul>
         </div>
 

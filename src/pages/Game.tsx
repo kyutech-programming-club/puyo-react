@@ -171,7 +171,7 @@ export const Game: React.FC = () => {
           case "w": setPlayer1Current(prev=>rotateWithWallKick(prev,player1Board,false)); break;
           case "a": setPlayer1Current(prev=>moveHorizontal(prev,player1Board,-1)); break;
           case "d": setPlayer1Current(prev=>moveHorizontal(prev,player1Board,1)); break;
-          case "z": fixPlayer1({...player1CurrentRef.current,y:getDropPosition(player1Board,player1CurrentRef.current)}); break;
+          case " ": fixPlayer1({...player1CurrentRef.current,y:getDropPosition(player1Board,player1CurrentRef.current)}); break;
           case "e": skillActivateAttackBoost(1); break;
         }
       }
