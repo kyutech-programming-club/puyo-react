@@ -1,3 +1,4 @@
+// types.ts からのインポート
 import type { Cell, CurrentPuyo, CheckResult } from "../components/types";
 import { FIELD_WIDTH, FIELD_HEIGHT } from "../components/types";
 
@@ -16,8 +17,6 @@ export const getAdjacentPuyoOffset = (direction: CurrentPuyo["direction"]): [num
         case "left": return [-1, 0];
     }
 };
-
-
 
 // ぷよ固定
 export function fixPuyo(board: Cell[][], currentPuyo: CurrentPuyo): Cell[][] {
@@ -67,19 +66,19 @@ export function checkAndPopPuyos(board: Cell[][]): CheckResult {
     let poppedNum = 0;
 
     const directions = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
+        [1, 0], [-1, 0], [0, 1], [0, -1],
     ];
 
     for (let y = 0; y < FIELD_HEIGHT; y++) {
         for (let x = 0; x < FIELD_WIDTH; x++) {
             if (!visited[y][x] && newBoard[y][x] !== null) {
                 const color = newBoard[y][x];
+
+                // 灰色ブロックは消さない
+                if (color === "gray") continue;
+
                 const queue: [number, number][] = [[x, y]];
                 const connected: [number, number][] = [];
-
                 visited[y][x] = true;
 
                 while (queue.length > 0) {
@@ -104,7 +103,6 @@ export function checkAndPopPuyos(board: Cell[][]): CheckResult {
                 if (connected.length >= 4) {
                     popped = true;
                     poppedNum += connected.length;
-                    // 消す
                     for (const [cx, cy] of connected) {
                         newBoard[cy][cx] = null;
                     }
@@ -129,41 +127,33 @@ export function canMoveHorizontal(board: Cell[][], currentPuyo: CurrentPuyo, dx:
     const nextX = currentPuyo.x + dx;
     const [adx, ady] = getAdjacentPuyoOffset(currentPuyo.direction);
     if (
-        nextX < 0 ||
-        nextX >= FIELD_WIDTH ||
+        nextX < 0 || nextX >= FIELD_WIDTH ||
         board[currentPuyo.y][nextX] !== null ||
         board[currentPuyo.y + ady][nextX + adx] !== null
-    ) {
-        return false;
-    }
+    ) return false;
     return true;
 }
 
-// 高速落下先座標計算
-export function getDropPosition(board: Cell[][], currentPuyo: CurrentPuyo): number {
-    const [dx, dy] = getAdjacentPuyoOffset(currentPuyo.direction);
-    let newY = currentPuyo.y;
-
+// 高速落下位置取得
+export const getDropPosition = (board: Cell[][], current: CurrentPuyo): number => {
+    const [dx, dy] = getAdjacentPuyoOffset(current.direction);
+    let y = current.y;
     while (true) {
-        const mainNextY = newY + 1;
-        const subNextY = newY + dy + 1;
-        const subX = currentPuyo.x + dx;
+        const mainNextY = y + 1;
+        const subX = current.x + dx;
+        const subNextY = y + dy + 1;
 
-        const isMainBlocked =
-            mainNextY >= FIELD_HEIGHT || board[mainNextY][currentPuyo.x] !== null;
-        const isSubBlocked =
-            subNextY >= FIELD_HEIGHT ||
-            subX < 0 ||
-            subX >= FIELD_WIDTH ||
-            board[subNextY][subX] !== null;
+        const mainBlocked = mainNextY >= FIELD_HEIGHT || board[mainNextY][current.x] !== null;
+        const subBlocked = subNextY >= FIELD_HEIGHT ||
+            subX < 0 || subX >= FIELD_WIDTH || board[subNextY][subX] !== null;
 
-        if (isMainBlocked || isSubBlocked) break;
-        newY++;
+        if (mainBlocked || subBlocked) break;
+        y++;
     }
-    return newY;
-}
+    return y;
+};
 
-// 
+// ゲームオーバー判定
 export function checkGameOver(board: Cell[][]): boolean {
     return board[0][2] !== null || board[0][3] !== null;
 }
@@ -185,3 +175,18 @@ export function initCurrentPuyo(): CurrentPuyo {
         subColor: getRandomColor(),
     };
 }
+
+// おじゃまライン追加（灰色）
+export function addOjamaLine(board: Cell[][]): Cell[][] {
+    const newBoard = board.map(row => [...row]);
+    newBoard.shift(); // 上に詰める
+    newBoard.push(Array(FIELD_WIDTH).fill("gray")); // 最下段に灰色追加
+    return newBoard;
+}
+
+// 相手の盤面の灰色セルを全部消す
+export const removeAllOjama = (board: Cell[][]): Cell[][] => {
+    return board.map(row =>
+        row.map(cell => (cell === "gray" ? null : cell))
+    );
+};

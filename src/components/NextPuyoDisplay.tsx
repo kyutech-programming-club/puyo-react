@@ -2,7 +2,7 @@ import type { CurrentPuyo } from "../components/types";
 
 type Props = {
     nextPuyos: CurrentPuyo[];
-    position?: "left" | "right"; // ← 追加
+    position?: "left" | "right"; 
 };
 
 export const NextPuyoDisplay: React.FC<Props> = ({ nextPuyos, position = "right" }) => {
@@ -11,7 +11,7 @@ export const NextPuyoDisplay: React.FC<Props> = ({ nextPuyos, position = "right"
             style={{
                 position: "absolute",
                 top: 20,
-                [position]: 20, // left か right に切り替え
+                [position]: 20, 
             }}
         >
             {nextPuyos.map((puyo, index) => (
