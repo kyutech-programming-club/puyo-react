@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Home } from "./pages/home";
 import { Game } from "./pages/Game";
 import { ScoreScreen } from "./pages/ScoreScreen";
+import { Instructions } from "./pages/Instructions"; 
+import { Rules } from "./pages/Rules"; 
 
 const App: React.FC = () => {
   return (
@@ -11,6 +13,9 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
         <Route path="/score" element={<ScoreScreen />} />
+        <Route path="/instructions" element={<Instructions />} />
+        <Route path="/rules" element={<Rules />} />
+
       </Routes>
     </BrowserRouter>
   );
